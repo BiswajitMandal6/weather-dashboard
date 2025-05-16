@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Weather App</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 500px;
+            background-color: rgba(255, 255, 255, 0.9);
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 25px;
+        }
+
+        .search-container {
+            display: flex;
+            margin-bottom: 25px;
+        }
+
+        #location-input {
+            flex: 1;
+            padding: 12px 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px 0 0 8px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        #search-btn {
+            padding: 12px 20px;
+            background-color: #4c6ef5;
+            color: white;
+            border: none;
+            border-radius: 0 8px 8px 0;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        #search-btn:hover {
+            background-color: #3b5bdb;
+        }
+
+        .weather-card {
+            background-color: white;
+            border-radius: 10px;
+            padding: 20px;
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        #city-name {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        .weather-details {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .temperature {
+            text-align: center;
+        }
+
+        #temperature {
+            font-size: 2.5rem;
+            color: #333;
+        }
+
+        #feels-like {
+            color: #666;
+            font-size: 0.9rem;
+        }
+
+        .weather-condition {
+            text-align: center;
+        }
+
+        #weather-icon {
+            width: 80px;
+            height: 80px;
+        }
+
+        #weather-description {
+            color: #666;
+            text-transform: capitalize;
+        }
+
+        .additional-info {
+            display: flex;
+            justify-content: space-around;
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+        }
+
+        .info-item {
+            text-align: center;
+        }
+
+        .info-label {
+            color: #666;
+            font-size: 0.9rem;
+            margin-right: 5px;
+        }
+
+        .error-message {
+            text-align: center;
+            color: #e74c3c;
+            padding: 15px;
+            background-color: #fdeaea;
+            border-radius: 8px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+            
+            .weather-details {
+                flex-direction: column;
+            }
+            
+            .temperature {
+                margin-bottom: 15px;
+            }
+        } 
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Weather App</h1>
+        <div class="search-container">
+            <input type="text" id="location-input" placeholder="Enter city name...">
+            <button id="search-btn">Search</button>
+        </div>
+        <div class="weather-info" id="weather-info">
+            <div class="weather-card hidden" id="weather-card">
+                <h2 id="city-name">City Name</h2>
+                <div class="weather-details">
+                    <div class="temperature">
+                        <h3 id="temperature">--°C</h3>
+                        <p id="feels-like">Feels like: --°C</p>
+                    </div>
+                    <div class="weather-condition">
+                        <img id="weather-icon" src="" alt="Weather Icon">
+                        <p id="weather-description">Description</p>
+                    </div>
+                </div>
+                <div class="additional-info">
+                    <div class="info-item">
+                        <span class="info-label">Humidity:</span>
+                        <span id="humidity">--%</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="info-label">Wind:</span>
+                        <span id="wind-speed">-- m/s</span>
+                    </div>
+                </div>
+            </div>
+            <div id="error-message" class="error-message hidden">
+                Location not found. Please try again.
+            </div>
+        </div>
+    </div>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const apiKey = 'af0372a61de14f9491d71453251605';
+            const searchBtn = document.getElementById('search-btn');
+            const locationInput = document.getElementById('location-input');
+            const weatherCard = document.getElementById('weather-card');
+            const errorMessage = document.getElementById('error-message');
+            
+            const cityName = document.getElementById('city-name');
+            const temperature = document.getElementById('temperature');
+            const feelsLike = document.getElementById('feels-like');
+            const weatherIcon = document.getElementById('weather-icon');
+            const weatherDescription = document.getElementById('weather-description');
+            const humidity = document.getElementById('humidity');
+            const windSpeed = document.getElementById('wind-speed');
+            
+            
+            searchBtn.addEventListener('click', getWeatherData);
+            
+            
+            locationInput.addEventListener('keypress', function(e) {
+                if (e.key === 'Enter') {
+                    getWeatherData();
+                }
+            });
+            
+            
+            function getWeatherData() {
+                const location = locationInput.value.trim();
+                
+                if (!location) {
+                    showError('Please enter a location');
+                    return;
+                }
+                
+               
+                weatherCard.classList.add('hidden');
+                errorMessage.classList.add('hidden');
+                
+                
+                                fetch(`https://api.weatherapi.com/v1/current.json?key=${apiKey}&q=${location}&aqi=yes`)
+                    .then(response => {
+                        if (!response.ok) {
+                            if (response.status === 401) {
+                                throw new Error('Invalid API key');
+                            } else if (response.status === 404) {
+                                throw new Error('Location not found');
+                            } else {
+                                throw new Error(`Error: ${response.status}`);
+                            }
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                       
+                        const city = data.location.name;
+                        const country = data.location.country;
+                        const temp_c = data.current.temp_c;
+                        const feelslike_c = data.current.feelslike_c;
+                        const condition = data.current.condition.text;
+                        const iconUrl = data.current.condition.icon;
+                        const humid = data.current.humidity;
+                        const wind = data.current.wind_kph;
+                        
+                       
+                        cityName.textContent = `${city}, ${country}`;
+                        temperature.textContent = `${temp_c}°C`;
+                        feelsLike.textContent = `Feels like: ${feelslike_c}°C`;
+                        weatherIcon.src = iconUrl;
+                        weatherDescription.textContent = condition;
+                        humidity.textContent = `${humid}%`;
+                        windSpeed.textContent = `${wind} km/h`;
+                        
+                       
+                        weatherCard.classList.remove('hidden');
+                    })
+                    .catch(error => {
+                        console.error('Error fetching weather data:', error);
+                        showError(error.message || 'Location not found. Please try again.');
+                    });
+            }
+            
+           
+            function showError(message) {
+                errorMessage.textContent = message;
+                errorMessage.classList.remove('hidden');
+                weatherCard.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>
